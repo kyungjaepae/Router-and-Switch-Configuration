@@ -63,3 +63,52 @@ R0(config-if)# no shutdown                                  # Enable the interfa
 ```
 Repeat for other router interfaces (R1, R2)
 
+## Step 5: Configure Routing Between Networks
+Static routing ensures different subnets can communicate.
+```
+R0(config)# ip route 192.168.2.0 255.255.255.0 10.0.0.2     # Route to VLAN 20 via R1
+R1(config)# ip route 192.168.1.0 255.255.255.0 10.0.0.1     # Route to VLAN 10 via R0
+```
+
+## Step 6: Configure Remote Access (Telnet/SSH)
+This allows remote device management.
+1. Enable Telnet & set a password:
+```
+R0(config)# line vty 0 4                                    # Select virtual terminal lines
+R0(config-line)# password TelnetPass                        # Set Telnet password
+R0(config-line)# login                                      # Enable login
+```
+2. Enable SSH & set up a user:
+```
+R0(config)# ip domain-name example.com                      # Required for SSH
+R0(config)# crypto key generate rsa                         # Generate encryption key
+R0(config)# username admin secret AdminPass                 # Create an SSH user
+R0(config)# line vty 0 4
+R0(config-line)# transport input ssh                        # Allow only SSH
+```
+
+## Step 7: Confgiure Port Security on Switches
+Prevents unauthorized devices from connecting to the switch.
+```
+Switch(config)# interface FastEthernet0/1                       # Select PC0's port
+Switch(config-if)# switchport mode access                       # Set port as access
+Switch(config-if)# switchport port-security                     # Enable port security
+Switch(config-if)# switchport port-security mac-address sticky  # Remember learned MAC
+Switch(config-if)# switchport port-security violation restrict  # Restrict violations
+```
+Repeat this for each PC port on SW0 & SW1.
+
+## Step 8: Configure ACL to Restrict Traffic
+Controls which devices can communicate.
+1. Deny PC0 from accessing PC2:
+```
+R0(config)# access-list 100 deny ip 192.168.1.10 0.0.0.0 192.168.2.10 0.0.0.0     # Block traffic from PC0 to PC2
+R0(config)# access-list 100 permit ip any any                                     # Allow other traffic
+R0(config)# interface GigabitEthernet0/0                                          # Select the interface where ACL should be applied
+R0(config-if)# ip access-group 100 in                                             # Apply ACL 100 to inbound traffic on this interface
+```
+
+## Summary
+* Configured VLANs, routing, remote access, security & ACLs.
+* Test connectivity using ```ping``` between PCs.
+* Save settings using ```write memory``` on all devices.
